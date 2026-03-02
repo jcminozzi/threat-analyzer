@@ -1,0 +1,11 @@
+# Exemplo de arquivo para análise em bulk
+# Linhas com # são comentários e serão ignoradas
+# Um IP ou domínio por linha
+
+# IPs suspeitos
+185.220.101.45
+8.8.8.8
+
+# Domínios
+google.com
+suspeito.com
