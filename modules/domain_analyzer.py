@@ -226,7 +226,12 @@ def get_whois(domain: str) -> dict:
 
         age_days = None
         if creation:
-            age_days = (datetime.now() - creation).days
+            # Normaliza para datetime sem timezone para evitar erro de comparação
+            if hasattr(creation, 'tzinfo') and creation.tzinfo is not None:
+                creation_naive = creation.replace(tzinfo=None)
+            else:
+                creation_naive = creation
+            age_days = (datetime.now() - creation_naive).days
 
         return {
             "registrar": w.registrar or "N/A",
