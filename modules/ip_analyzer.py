@@ -1,7 +1,13 @@
 """
-IP Analyzer Module
-- VirusTotal: reputação, detecções de malware
-- AbuseIPDB: score de abuso, categoria, país
+Módulo de Análise de IP
+========================
+Consulta duas fontes de inteligência para avaliar um endereço IP:
+
+  VirusTotal  → 90+ engines de segurança verificam reputação e malware
+  AbuseIPDB   → Score colaborativo de abuso (0 = limpo, 100 = malicioso)
+
+NOTA: Código desenvolvido com fins educacionais (vibe coded).
+      Não sou desenvolvedor — estou aprendendo cibersegurança na prática.
 """
 
 import os
@@ -151,10 +157,14 @@ def render_abuse_result(ip: str, data: dict):
 
 
 def analyze_ip(ip: str, vt_key: str = None, abuse_key: str = None) -> dict:
+    """Orquestra a análise completa de um IP consultando VT e AbuseIPDB."""
+    from modules.explicacoes import explicar_ip
+
     vt_key = vt_key or os.environ.get("VT_API_KEY")
     abuse_key = abuse_key or os.environ.get("ABUSE_API_KEY")
 
     results = {"ip": ip}
+    risco_final = "BAIXO"
 
     # VirusTotal
     if vt_key:
@@ -162,9 +172,15 @@ def analyze_ip(ip: str, vt_key: str = None, abuse_key: str = None) -> dict:
         vt_data = get_virustotal_ip(ip, vt_key)
         render_vt_result(ip, vt_data)
         results["virustotal"] = vt_data
+        # Determina risco pelo VT para usar na explicação
+        if "error" not in vt_data:
+            mal = vt_data.get("last_analysis_stats", {}).get("malicious", 0)
+            if mal > 10: risco_final = "CRÍTICO"
+            elif mal > 3: risco_final = "ALTO"
+            elif mal > 0: risco_final = "MÉDIO"
     else:
         console.print("[yellow]⚠️  VT_API_KEY não configurada. Pulando VirusTotal.[/yellow]")
-        console.print("[dim]   → Obtenha em: https://www.virustotal.com/gui/my-apikey[/dim]")
+        console.print("[dim]   → Configure no arquivo .env | Obtenha em: https://www.virustotal.com/gui/my-apikey[/dim]")
 
     # AbuseIPDB
     if abuse_key:
@@ -172,8 +188,17 @@ def analyze_ip(ip: str, vt_key: str = None, abuse_key: str = None) -> dict:
         abuse_data = get_abuseipdb(ip, abuse_key)
         render_abuse_result(ip, abuse_data)
         results["abuseipdb"] = abuse_data
+        # Eleva risco se AbuseIPDB indicar maior severidade
+        if "error" not in abuse_data:
+            score = abuse_data.get("abuseConfidenceScore", 0)
+            if score >= 80 and risco_final not in ["CRÍTICO"]: risco_final = "CRÍTICO"
+            elif score >= 50 and risco_final not in ["CRÍTICO", "ALTO"]: risco_final = "ALTO"
+            elif score >= 20 and risco_final == "BAIXO": risco_final = "MÉDIO"
     else:
         console.print("[yellow]⚠️  ABUSE_API_KEY não configurada. Pulando AbuseIPDB.[/yellow]")
-        console.print("[dim]   → Obtenha em: https://www.abuseipdb.com/account/api[/dim]")
+        console.print("[dim]   → Configure no arquivo .env | Obtenha em: https://www.abuseipdb.com/account/api[/dim]")
+
+    # Exibe explicação educacional com base no risco final
+    explicar_ip(risco_final)
 
     return results

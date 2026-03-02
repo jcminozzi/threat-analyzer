@@ -1,9 +1,21 @@
 """
-Domain Analyzer Module
-- DNS Records (A, MX, NS, TXT)
-- SPF, DKIM, DMARC (Anti-Spoofing)
-- WHOIS info
-- VirusTotal domain reputation
+Módulo de Análise de Domínio
+==============================
+Realiza múltiplas verificações em um domínio:
+
+  DNS    → Mapeia registros do domínio (A=IP, MX=email, NS=servidor, TXT=configs)
+  WHOIS  → Informações de registro (dono, data de criação, expiração)
+  SPF    → Sender Policy Framework: define quais servidores podem enviar e-mail pelo domínio
+  DKIM   → DomainKeys Identified Mail: assinatura criptográfica nos e-mails
+  DMARC  → Domain-based Message Authentication: política de rejeição de e-mails falsos
+  BIMI   → Indicador visual de marca nos e-mails (opcional, para grandes empresas)
+
+Por que SPF/DKIM/DMARC importam?
+  Sem esses registros, qualquer pessoa pode enviar e-mails fingindo ser seu domínio.
+  Isso é chamado de "spoofing" e é a base da maioria dos ataques de phishing.
+
+NOTA: Código desenvolvido com fins educacionais (vibe coded).
+      Não sou desenvolvedor — estou aprendendo cibersegurança na prática.
 """
 
 import os
@@ -426,22 +438,25 @@ def render_vt_domain(domain: str, data: dict):
 # ─── MAIN ──────────────────────────────────────────────────────────────────────
 
 def analyze_domain(domain: str, vt_key: str = None) -> dict:
+    """Orquestra a análise completa de um domínio: DNS, WHOIS, spoofing e VT."""
+    from modules.explicacoes import explicar_spoofing
+
     vt_key = vt_key or os.environ.get("VT_API_KEY")
     results = {"domain": domain}
 
-    # DNS
+    # DNS — mapeia todos os registros do domínio
     console.print(f"[dim]🔄 Resolvendo DNS...[/dim]")
     dns_records = get_dns_records(domain)
     render_dns(domain, dns_records)
     results["dns"] = dns_records
 
-    # WHOIS
+    # WHOIS — informações de registro do domínio
     console.print(f"[dim]🔄 Consultando WHOIS...[/dim]")
     whois_data = get_whois(domain)
     render_whois(whois_data)
     results["whois"] = whois_data
 
-    # Anti-Spoofing
+    # Anti-Spoofing — verifica SPF, DKIM, DMARC e BIMI
     console.print(f"[dim]🔄 Verificando proteções anti-spoofing...[/dim]")
     txt_records = dns_records.get("TXT", [])
     spf = check_spf(txt_records)
@@ -457,7 +472,10 @@ def analyze_domain(domain: str, vt_key: str = None) -> dict:
         "overall_risk": overall
     }
 
-    # VirusTotal
+    # Exibe explicação educacional sobre o risco de spoofing encontrado
+    explicar_spoofing(overall.get("level", "BAIXO"))
+
+    # VirusTotal — reputação do domínio em 90+ engines
     if vt_key:
         console.print(f"[dim]🔄 Consultando VirusTotal...[/dim]")
         vt_data = get_vt_domain(domain, vt_key)
@@ -465,5 +483,6 @@ def analyze_domain(domain: str, vt_key: str = None) -> dict:
         results["virustotal"] = vt_data
     else:
         console.print("[yellow]⚠️  VT_API_KEY não configurada. Pulando VirusTotal.[/yellow]")
+        console.print("[dim]   → Configure no arquivo .env | Obtenha em: https://www.virustotal.com/gui/my-apikey[/dim]")
 
     return results

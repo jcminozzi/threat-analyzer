@@ -246,7 +246,7 @@ def generate_html_report(results: dict) -> str:
     html = HTML_TEMPLATE.format(
         target=target,
         generated_at=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-        author="João Carlos Mincuzzi",
+        author="João Carlos Minozzi",
         content="\n".join(content_parts)
     )
 

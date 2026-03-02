@@ -1,7 +1,7 @@
 # 🛡️ Threat Analyzer
 
 > Ferramenta de análise de IPs suspeitos, domínios e detecção de spoofing.  
-> Desenvolvida por **João Carlos Mincuzzi** — SOC / Cibersegurança
+> Desenvolvida por **João Carlos Minozzi** — SOC / Cibersegurança
 
 ---
 

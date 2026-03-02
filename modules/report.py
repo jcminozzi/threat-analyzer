@@ -16,7 +16,7 @@ def generate_report(results: dict) -> str:
     report = {
         "generated_at": datetime.now().isoformat(),
         "tool": "Threat Analyzer",
-        "author": "João Carlos Mincuzzi",
+        "author": "João Carlos Minozzi",
         "results": results
     }
 
